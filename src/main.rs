@@ -1,28 +1,43 @@
 extern crate ggez;
 
-use ggez::event;
+use ggez::event::{self, MouseButton, MouseState};
 use ggez::graphics;
 use ggez::{Context, ContextBuilder, GameResult};
 use ggez::conf::{WindowMode, WindowSetup};
 use std::env;
 use std::path;
 
+struct FieldMoved {
+    x: i32,
+    y: i32,
+}
+
 struct MainState {
-    tile: graphics::Image,
+    field: [[u8; 100]; 100],
+    tiles: graphics::spritebatch::SpriteBatch,
     message_frame_img: graphics::Image,
     frames: usize,
+    field_moved: FieldMoved,
+    mouse_down: bool,
 }
 
 impl MainState {
     fn new(ctx: &mut Context) -> GameResult<MainState> {
+        let field = [[0; 100]; 100];
         let tile = graphics::Image::new(ctx, "/world.png")?;
+        let tiles = graphics::spritebatch::SpriteBatch::new(tile);
         let message_frame_img = graphics::Image::new(ctx, "/hakkou1.png")?;
         let frames = 0;
+        let field_moved = FieldMoved {x: 0, y: 0};
+        let mouse_down = false;
 
         let s = MainState {
-            tile,
+            field,
+            tiles,
             message_frame_img,
             frames,
+            field_moved,
+            mouse_down,
         };
         Ok(s)
     }
@@ -32,19 +47,49 @@ impl event::EventHandler for MainState {
     fn update(&mut self, _ctx: &mut Context) -> GameResult<()> {
         Ok(())
     }
+    
+    fn mouse_button_down_event(&mut self, _ctx: &mut Context, button: MouseButton, x: i32, y: i32) {
+        self.mouse_down = true;
+        println!("Mouse button pressed: {:?}, x: {}, y: {}", button, x, y);
+    }
+
+    fn mouse_button_up_event(&mut self, _ctx: &mut Context, button: MouseButton, x: i32, y: i32) {
+        self.mouse_down = false;
+        println!("Mouse button released: {:?}, x: {}, y: {}", button, x, y);
+    }
+
+    fn mouse_motion_event(&mut self, _ctx: &mut Context, _state: MouseState, x: i32, y: i32, xrel: i32, yrel: i32,) {
+        if self.mouse_down {
+            self.field_moved.x = x;
+            self.field_moved.y = y;
+        }
+        println!("Mouse motion, x: {}, y: {}, relative x: {}, relative y: {}", x, y, xrel, yrel);
+        println!("field_moved, x: {}, y: {}", self.field_moved.x, self.field_moved.y);
+    }
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
         graphics::set_background_color(ctx, graphics::BLACK);
         graphics::clear(ctx);
 
         graphics::set_color(ctx, graphics::WHITE)?;
+        for x in 0..self.field.len() {
+            for y in 0..self.field[x].len() {
+                let x = x as f32;
+                let y = y as f32;
+                let p = graphics::DrawParam {
+                    src: graphics::Rect::new(3. / 8., 4. / 23., 1. / 8., 1. / 23.),
+                    dest: graphics::Point2::new(x * 32., y * 32.),
+                    scale: graphics::Point2::new(2., 2.),
+                    .. Default::default()
+                };
+                self.tiles.add(p);
+            }
+        }
         graphics::draw_ex(
             ctx,
-            &self.tile,
+            &self.tiles,
             graphics::DrawParam {
-                src: graphics::Rect::new(3. / 8., 4. / 23., 1. / 8., 1. / 23.),
-                dest: graphics::Point2::new(0., 0.),
-                scale: graphics::Point2::new(2., 2.),
+                dest: graphics::Point2::new(300., 10.),
                 .. Default::default()
             },
         ).expect("cannot draw tile");
@@ -59,11 +104,17 @@ impl event::EventHandler for MainState {
             },
         ).expect("cannot draw message_frame_img");
 
+        graphics::rectangle(
+            ctx,
+            graphics::DrawMode::Line(1.),
+            graphics::Rect::new(300., 10., 970., 740.),
+        )?;
+
         graphics::set_color(ctx, graphics::Color::new(0., 0., 1., 1.))?;
         graphics::rectangle(
             ctx,
             graphics::DrawMode::Fill,
-            graphics::Rect::new(0., 0., 280., 960.),
+            graphics::Rect::new(0., 0., 280., 740.),
         )?;
     
         self.frames += 1;
