@@ -4,8 +4,11 @@ use ggez::event::{self, MouseButton, MouseState};
 use ggez::graphics;
 use ggez::{Context, ContextBuilder, GameResult};
 use ggez::conf::{WindowMode, WindowSetup};
-use std::env;
-use std::path;
+use std::{env, path, cmp};
+
+fn limit(target: usize, under_limit: usize, upper_limit: usize) -> usize{
+    cmp::max(cmp::min(target, upper_limit), under_limit)
+}
 
 struct FieldMoved {
     x: i32,
@@ -19,17 +22,36 @@ struct MainState {
     frames: usize,
     field_moved: FieldMoved,
     mouse_down: bool,
+    FIELD_AREA_WIDTH: f32,
+    FIELD_AREA_HEIGHT: f32,
+    FIELD_AREA_X: f32,
+    FIELD_AREA_Y: f32,
 }
 
 impl MainState {
     fn new(ctx: &mut Context) -> GameResult<MainState> {
-        let field = [[0; 100]; 100];
+        let mut field = [[0; 100]; 100];
         let tile = graphics::Image::new(ctx, "/world.png")?;
         let tiles = graphics::spritebatch::SpriteBatch::new(tile);
         let message_frame_img = graphics::Image::new(ctx, "/hakkou1.png")?;
         let frames = 0;
         let field_moved = FieldMoved {x: 0, y: 0};
         let mouse_down = false;
+
+        const FIELD_AREA_WIDTH: f32 = 970.;
+        const FIELD_AREA_HEIGHT: f32 = 740.;
+        const FIELD_AREA_X: f32 = 300.;
+        const FIELD_AREA_Y: f32 = 10.;
+
+        field[0][0] = 1;
+        field[10][0] = 1;
+        field[20][0] = 1;
+        field[30][0] = 1;
+        field[40][0] = 1;
+        field[10][10] = 1;
+        field[20][20] = 1;
+        field[30][30] = 1;
+        field[40][40] = 1;
 
         let s = MainState {
             field,
@@ -38,6 +60,10 @@ impl MainState {
             frames,
             field_moved,
             mouse_down,
+            FIELD_AREA_WIDTH,
+            FIELD_AREA_HEIGHT,
+            FIELD_AREA_X,
+            FIELD_AREA_Y,
         };
         Ok(s)
     }
@@ -68,11 +94,14 @@ impl event::EventHandler for MainState {
         graphics::clear(ctx);
 
         graphics::set_color(ctx, graphics::WHITE)?;
+        let field_start_x = limit(-(self.field_moved.x as f32 / 32.) as usize, 0, 70);
+        let field_start_y = limit(-(self.field_moved.y as f32 / 32.) as usize, 0, 78);
         let mut p;
-        for x in 0..self.field.len() {
-            for y in 0..self.field[x].len() {
-                let xf = x as f32;
-                let yf = y as f32;
+        let mut xf = 0.;
+        for x in field_start_x..(field_start_x + 30) {
+            let mut yf = 0.;
+            for y in field_start_y..(field_start_y + 22) {
+                println!("{}, {}", x, y);
                 match self.field[x][y] {
                     0 => p = graphics::DrawParam {
                             src: graphics::Rect::new(3. / 8., 4. / 23., 1. / 8., 1. / 23.),
@@ -91,13 +120,16 @@ impl event::EventHandler for MainState {
                         },
                 }
                 self.tiles.add(p);
+                yf += 1.;
             }
+            xf += 1.;
         }
+
         graphics::draw_ex(
             ctx,
             &self.tiles,
             graphics::DrawParam {
-                dest: graphics::Point2::new(300. + self.field_moved.x as f32, 10. + self.field_moved.y as f32),
+                dest: graphics::Point2::new(self.FIELD_AREA_X, self.FIELD_AREA_Y),
                 .. Default::default()
             },
         ).expect("cannot draw tile");
@@ -115,7 +147,7 @@ impl event::EventHandler for MainState {
         graphics::rectangle(
             ctx,
             graphics::DrawMode::Line(1.),
-            graphics::Rect::new(300., 10., 970., 740.),
+            graphics::Rect::new(self.FIELD_AREA_X, self.FIELD_AREA_Y, self.FIELD_AREA_WIDTH, self.FIELD_AREA_HEIGHT),
         )?;
 
         graphics::set_color(ctx, graphics::Color::new(0., 0., 1., 1.))?;
