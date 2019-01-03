@@ -60,8 +60,8 @@ impl event::EventHandler for MainState {
 
     fn mouse_motion_event(&mut self, _ctx: &mut Context, _state: MouseState, x: i32, y: i32, xrel: i32, yrel: i32,) {
         if self.mouse_down {
-            self.field_moved.x = x;
-            self.field_moved.y = y;
+            self.field_moved.x += xrel;
+            self.field_moved.y += yrel;
         }
         println!("Mouse motion, x: {}, y: {}, relative x: {}, relative y: {}", x, y, xrel, yrel);
         println!("field_moved, x: {}, y: {}", self.field_moved.x, self.field_moved.y);
@@ -72,16 +72,30 @@ impl event::EventHandler for MainState {
         graphics::clear(ctx);
 
         graphics::set_color(ctx, graphics::WHITE)?;
-        for x in 0..self.field.len() {
-            for y in 0..self.field[x].len() {
-                let x = x as f32;
-                let y = y as f32;
-                let p = graphics::DrawParam {
-                    src: graphics::Rect::new(3. / 8., 4. / 23., 1. / 8., 1. / 23.),
-                    dest: graphics::Point2::new(x * 32., y * 32.),
-                    scale: graphics::Point2::new(2., 2.),
-                    .. Default::default()
-                };
+        // for x in 0..self.field.len() {
+        //     for y in 0..self.field[x].len() {
+        let mut p;
+        for x in 0..10 {
+            for y in 0..10 {
+                let xf = x as f32;
+                let yf = y as f32;
+                match self.field[x][y] {
+                    0 => p = graphics::DrawParam {
+                            src: graphics::Rect::new(3. / 8., 4. / 23., 1. / 8., 1. / 23.),
+                            dest: graphics::Point2::new(xf * 32., yf * 32.),
+                            scale: graphics::Point2::new(2., 2.),
+                            .. Default::default()
+                        },
+                    _ => {
+                            p = graphics::DrawParam {
+                                src: graphics::Rect::new(7. / 8., 0. / 23., 1. / 8., 1. / 23.),
+                                dest: graphics::Point2::new(xf * 32., yf * 32.),
+                                scale: graphics::Point2::new(2., 2.),
+                                .. Default::default()
+                            };
+                            println!("undefined number");
+                        },
+                }
                 self.tiles.add(p);
             }
         }
@@ -89,7 +103,7 @@ impl event::EventHandler for MainState {
             ctx,
             &self.tiles,
             graphics::DrawParam {
-                dest: graphics::Point2::new(300., 10.),
+                dest: graphics::Point2::new(300. + self.field_moved.x as f32, 10. + self.field_moved.y as f32),
                 .. Default::default()
             },
         ).expect("cannot draw tile");
