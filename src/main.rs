@@ -48,23 +48,19 @@ impl event::EventHandler for MainState {
         Ok(())
     }
     
-    fn mouse_button_down_event(&mut self, _ctx: &mut Context, button: MouseButton, x: i32, y: i32) {
+    fn mouse_button_down_event(&mut self, _ctx: &mut Context, _button: MouseButton, _x: i32, _y: i32) {
         self.mouse_down = true;
-        println!("Mouse button pressed: {:?}, x: {}, y: {}", button, x, y);
     }
 
-    fn mouse_button_up_event(&mut self, _ctx: &mut Context, button: MouseButton, x: i32, y: i32) {
+    fn mouse_button_up_event(&mut self, _ctx: &mut Context, _button: MouseButton, _x: i32, _y: i32) {
         self.mouse_down = false;
-        println!("Mouse button released: {:?}, x: {}, y: {}", button, x, y);
     }
 
-    fn mouse_motion_event(&mut self, _ctx: &mut Context, _state: MouseState, x: i32, y: i32, xrel: i32, yrel: i32,) {
+    fn mouse_motion_event(&mut self, _ctx: &mut Context, _state: MouseState, _x: i32, _y: i32, xrel: i32, yrel: i32,) {
         if self.mouse_down {
             self.field_moved.x += xrel;
             self.field_moved.y += yrel;
         }
-        println!("Mouse motion, x: {}, y: {}, relative x: {}, relative y: {}", x, y, xrel, yrel);
-        println!("field_moved, x: {}, y: {}", self.field_moved.x, self.field_moved.y);
     }
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
@@ -72,11 +68,9 @@ impl event::EventHandler for MainState {
         graphics::clear(ctx);
 
         graphics::set_color(ctx, graphics::WHITE)?;
-        // for x in 0..self.field.len() {
-        //     for y in 0..self.field[x].len() {
         let mut p;
-        for x in 0..10 {
-            for y in 0..10 {
+        for x in 0..self.field.len() {
+            for y in 0..self.field[x].len() {
                 let xf = x as f32;
                 let yf = y as f32;
                 match self.field[x][y] {
