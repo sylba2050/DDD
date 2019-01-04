@@ -18,6 +18,7 @@ struct FieldMoved {
 struct MainState {
     field: [[u8; 100]; 100],
     tiles: graphics::spritebatch::SpriteBatch,
+    bases: graphics::spritebatch::SpriteBatch,
     message_frame_img: graphics::Image,
     frames: usize,
     field_moved: FieldMoved,
@@ -35,6 +36,8 @@ impl MainState {
         let mut field = [[0; 100]; 100];
         let tile = graphics::Image::new(ctx, "/world.png")?;
         let tiles = graphics::spritebatch::SpriteBatch::new(tile);
+        let base = graphics::Image::new(ctx, "/world.png")?;
+        let bases = graphics::spritebatch::SpriteBatch::new(base);
         let message_frame_img = graphics::Image::new(ctx, "/hakkou1.png")?;
         let frames = 0;
         let field_moved = FieldMoved {x: 0, y: 0};
@@ -56,10 +59,16 @@ impl MainState {
         field[20][20] = 1;
         field[30][30] = 1;
         field[40][40] = 1;
+        field[5][5] = 2;
+        field[15][15] = 2;
+        field[25][25] = 2;
+        field[35][35] = 2;
+        field[45][45] = 2;
 
         let s = MainState {
             field,
             tiles,
+            bases,
             message_frame_img,
             frames,
             field_moved,
@@ -100,34 +109,61 @@ impl event::EventHandler for MainState {
         graphics::clear(ctx);
 
         graphics::set_color(ctx, graphics::WHITE)?;
+
+        for x in 0..self.NUM_FIELD_MESH_X as usize {
+            for y in 0..self.NUM_FIELD_MESH_Y as usize {
+                let p = graphics::DrawParam {
+                            src: graphics::Rect::new(3. / 8., 4. / 23., 1. / 8., 1. / 23.),
+                            dest: graphics::Point2::new(x as f32 * 32., y as f32 * 32.),
+                            scale: graphics::Point2::new(2., 2.),
+                            .. Default::default()
+                        };
+                self.bases.add(p);
+            }
+        }
+
+        graphics::draw_ex(
+            ctx,
+            &self.bases,
+            graphics::DrawParam {
+                dest: graphics::Point2::new(self.FIELD_AREA_X, self.FIELD_AREA_Y),
+                .. Default::default()
+            },
+        ).expect("cannot draw base");
+
         let field_start_x = limit(-(self.field_moved.x as f32 / 32.) as i32, 0, 100 - self.NUM_FIELD_MESH_X);
         let field_start_y = limit(-(self.field_moved.y as f32 / 32.) as i32, 0, 100 - self.NUM_FIELD_MESH_Y);
         self.field_moved.x = limit(self.field_moved.x, -(32 * (100 - self.NUM_FIELD_MESH_X)), 0)  as i32;
         self.field_moved.y = limit(self.field_moved.y, -(32 * (100 - self.NUM_FIELD_MESH_Y)), 0)  as i32;
 
-        let mut p;
         let mut xf = 0.;
         for x in field_start_x..(field_start_x + self.NUM_FIELD_MESH_X as usize) {
             let mut yf = 0.;
             for y in field_start_y..(field_start_y + self.NUM_FIELD_MESH_Y as usize) {
                 match self.field[x][y] {
-                    0 => p = graphics::DrawParam {
-                            src: graphics::Rect::new(3. / 8., 4. / 23., 1. / 8., 1. / 23.),
-                            dest: graphics::Point2::new(xf * 32., yf * 32.),
-                            scale: graphics::Point2::new(2., 2.),
-                            .. Default::default()
-                        },
-                    _ => {
-                            p = graphics::DrawParam {
-                                src: graphics::Rect::new(7. / 8., 0. / 23., 1. / 8., 1. / 23.),
+                    0 => {},
+                    1 => {
+                            let p = graphics::DrawParam {
+                                src: graphics::Rect::new(7. / 8., 6. / 23., 1. / 8., 1. / 23.),
                                 dest: graphics::Point2::new(xf * 32., yf * 32.),
                                 scale: graphics::Point2::new(2., 2.),
                                 .. Default::default()
                             };
+                            self.tiles.add(p);
+                        },
+                    2 => {
+                            let p = graphics::DrawParam {
+                                src: graphics::Rect::new(0. / 8., 15. / 23., 1. / 8., 1. / 23.),
+                                dest: graphics::Point2::new(xf * 32., yf * 32.),
+                                scale: graphics::Point2::new(2., 2.),
+                                .. Default::default()
+                            };
+                            self.tiles.add(p);
+                        },
+                    _ => {
                             println!("undefined number");
                         },
                 }
-                self.tiles.add(p);
                 yf += 1.;
             }
             xf += 1.;
@@ -170,6 +206,8 @@ impl event::EventHandler for MainState {
             println!("FPS: {}", ggez::timer::get_fps(ctx));
         }
 
+        self.bases.clear();
+        self.tiles.clear();
         graphics::present(ctx);
         Ok(())
     }
