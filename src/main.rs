@@ -7,7 +7,6 @@ use ggez::conf::{WindowMode, WindowSetup};
 use std::{env, path, cmp};
 
 fn limit(target: i32, under_limit: i32, upper_limit: i32) -> usize {
-    println!("{}, {}, {}, {}", target, under_limit, upper_limit, cmp::min(target, upper_limit));
     cmp::max(cmp::min(target, upper_limit), under_limit) as usize
 }
 
