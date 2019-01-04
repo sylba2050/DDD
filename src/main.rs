@@ -6,8 +6,9 @@ use ggez::{Context, ContextBuilder, GameResult};
 use ggez::conf::{WindowMode, WindowSetup};
 use std::{env, path, cmp};
 
-fn limit(target: usize, under_limit: usize, upper_limit: usize) -> usize{
-    cmp::max(cmp::min(target, upper_limit), under_limit)
+fn limit(target: i32, under_limit: i32, upper_limit: i32) -> usize {
+    println!("{}, {}, {}, {}", target, under_limit, upper_limit, cmp::min(target, upper_limit));
+    cmp::max(cmp::min(target, upper_limit), under_limit) as usize
 }
 
 struct FieldMoved {
@@ -26,6 +27,8 @@ struct MainState {
     FIELD_AREA_HEIGHT: f32,
     FIELD_AREA_X: f32,
     FIELD_AREA_Y: f32,
+    NUM_FIELD_MESH_X: i32,
+    NUM_FIELD_MESH_Y: i32,
 }
 
 impl MainState {
@@ -38,10 +41,12 @@ impl MainState {
         let field_moved = FieldMoved {x: 0, y: 0};
         let mouse_down = false;
 
-        const FIELD_AREA_WIDTH: f32 = 970.;
-        const FIELD_AREA_HEIGHT: f32 = 740.;
+        const FIELD_AREA_WIDTH: f32 = 960.;
+        const FIELD_AREA_HEIGHT: f32 = 736.;
         const FIELD_AREA_X: f32 = 300.;
         const FIELD_AREA_Y: f32 = 10.;
+        const NUM_FIELD_MESH_X: i32 = 30;
+        const NUM_FIELD_MESH_Y: i32 = 23;
 
         field[0][0] = 1;
         field[10][0] = 1;
@@ -64,6 +69,8 @@ impl MainState {
             FIELD_AREA_HEIGHT,
             FIELD_AREA_X,
             FIELD_AREA_Y,
+            NUM_FIELD_MESH_X,
+            NUM_FIELD_MESH_Y,
         };
         Ok(s)
     }
@@ -94,14 +101,16 @@ impl event::EventHandler for MainState {
         graphics::clear(ctx);
 
         graphics::set_color(ctx, graphics::WHITE)?;
-        let field_start_x = limit(-(self.field_moved.x as f32 / 32.) as usize, 0, 70);
-        let field_start_y = limit(-(self.field_moved.y as f32 / 32.) as usize, 0, 78);
+        let field_start_x = limit(-(self.field_moved.x as f32 / 32.) as i32, 0, 100 - self.NUM_FIELD_MESH_X);
+        let field_start_y = limit(-(self.field_moved.y as f32 / 32.) as i32, 0, 100 - self.NUM_FIELD_MESH_Y);
+        self.field_moved.x = limit(self.field_moved.x, -(32 * (100 - self.NUM_FIELD_MESH_X)), 0)  as i32;
+        self.field_moved.y = limit(self.field_moved.y, -(32 * (100 - self.NUM_FIELD_MESH_Y)), 0)  as i32;
+
         let mut p;
         let mut xf = 0.;
-        for x in field_start_x..(field_start_x + 30) {
+        for x in field_start_x..(field_start_x + self.NUM_FIELD_MESH_X as usize) {
             let mut yf = 0.;
-            for y in field_start_y..(field_start_y + 22) {
-                println!("{}, {}", x, y);
+            for y in field_start_y..(field_start_y + self.NUM_FIELD_MESH_Y as usize) {
                 match self.field[x][y] {
                     0 => p = graphics::DrawParam {
                             src: graphics::Rect::new(3. / 8., 4. / 23., 1. / 8., 1. / 23.),
