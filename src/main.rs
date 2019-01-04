@@ -10,6 +10,45 @@ fn limit(target: i32, under_limit: i32, upper_limit: i32) -> usize {
     cmp::max(cmp::min(target, upper_limit), under_limit) as usize
 }
 
+fn get_tile_img(num: u8, x: f32, y: f32) -> graphics::DrawParam {
+    let mut p;
+    match num {
+        0 => {
+                p = graphics::DrawParam {
+                    src: graphics::Rect::new(3. / 8., 4. / 23., 1. / 8., 1. / 23.),
+                    dest: graphics::Point2::new(x * 32., y * 32.),
+                    scale: graphics::Point2::new(2., 2.),
+                    .. Default::default()
+                };
+            },
+        1 => {
+                p = graphics::DrawParam {
+                    src: graphics::Rect::new(7. / 8., 6. / 23., 1. / 8., 1. / 23.),
+                    dest: graphics::Point2::new(x * 32., y * 32.),
+                    scale: graphics::Point2::new(2., 2.),
+                    .. Default::default()
+                };
+            },
+        2 => {
+                p = graphics::DrawParam {
+                    src: graphics::Rect::new(0. / 8., 15. / 23., 1. / 8., 1. / 23.),
+                    dest: graphics::Point2::new(x * 32., y * 32.),
+                    scale: graphics::Point2::new(2., 2.),
+                    .. Default::default()
+                };
+            },
+        _ => {
+                p = graphics::DrawParam {
+                    src: graphics::Rect::new(3. / 8., 4. / 23., 1. / 8., 1. / 23.),
+                    dest: graphics::Point2::new(x * 32., y * 32.),
+                    scale: graphics::Point2::new(2., 2.),
+                    .. Default::default()
+                };
+            },
+    }
+    p
+}
+
 struct FieldMoved {
     x: i32,
     y: i32,
@@ -112,12 +151,7 @@ impl event::EventHandler for MainState {
 
         for x in 0..self.NUM_FIELD_MESH_X as usize {
             for y in 0..self.NUM_FIELD_MESH_Y as usize {
-                let p = graphics::DrawParam {
-                            src: graphics::Rect::new(3. / 8., 4. / 23., 1. / 8., 1. / 23.),
-                            dest: graphics::Point2::new(x as f32 * 32., y as f32 * 32.),
-                            scale: graphics::Point2::new(2., 2.),
-                            .. Default::default()
-                        };
+                let p = get_tile_img(0, x as f32, y as f32);
                 self.bases.add(p);
             }
         }
@@ -136,37 +170,14 @@ impl event::EventHandler for MainState {
         self.field_moved.x = limit(self.field_moved.x, -(32 * (100 - self.NUM_FIELD_MESH_X)), 0)  as i32;
         self.field_moved.y = limit(self.field_moved.y, -(32 * (100 - self.NUM_FIELD_MESH_Y)), 0)  as i32;
 
-        let mut xf = 0.;
-        for x in field_start_x..(field_start_x + self.NUM_FIELD_MESH_X as usize) {
-            let mut yf = 0.;
-            for y in field_start_y..(field_start_y + self.NUM_FIELD_MESH_Y as usize) {
-                match self.field[x][y] {
-                    0 => {},
-                    1 => {
-                            let p = graphics::DrawParam {
-                                src: graphics::Rect::new(7. / 8., 6. / 23., 1. / 8., 1. / 23.),
-                                dest: graphics::Point2::new(xf * 32., yf * 32.),
-                                scale: graphics::Point2::new(2., 2.),
-                                .. Default::default()
-                            };
-                            self.tiles.add(p);
-                        },
-                    2 => {
-                            let p = graphics::DrawParam {
-                                src: graphics::Rect::new(0. / 8., 15. / 23., 1. / 8., 1. / 23.),
-                                dest: graphics::Point2::new(xf * 32., yf * 32.),
-                                scale: graphics::Point2::new(2., 2.),
-                                .. Default::default()
-                            };
-                            self.tiles.add(p);
-                        },
-                    _ => {
-                            println!("undefined number");
-                        },
+        for (xf, x) in (field_start_x..(field_start_x + self.NUM_FIELD_MESH_X as usize)).enumerate() {
+            for (yf, y) in (field_start_y..(field_start_y + self.NUM_FIELD_MESH_Y as usize)).enumerate() {
+                if self.field[x][y] == 0 {
+                    continue
                 }
-                yf += 1.;
+                let p = get_tile_img(self.field[x][y], xf as f32, yf as f32);
+                self.tiles.add(p);
             }
-            xf += 1.;
         }
 
         graphics::draw_ex(
